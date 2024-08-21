@@ -27,6 +27,7 @@ func (con RegStudentController) GetRegularStudent(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id(get regular student): " + err.Error(),
 		})
+		return
 	}
 	student := models.StudentReg{Id: id}
 	models.DB.Find(&student)
@@ -149,6 +150,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id: " + err.Error(),
 		})
+		return
 	}
 
 	//	Find student from database
@@ -186,43 +188,14 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Calculate total purchase class amount
 	totalClass := student.TotalPurchaseClass + classAmount
 
-	//	Update different data by pay method
-	if payMethod == 0 {
-		err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: 0, TotalPurchaseClass: totalClass, InstallmentAmount: 0, HavePaid: 0}).Error
-		if err != nil {
-			log.Fatal("Error by update total purchase class(buy class):", err.Error())
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"message": "購買資料更新失敗，請重試",
-			})
-			return
-		}
-	} else if payMethod == 1 {
-		err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: 1, TotalPurchaseClass: totalClass, InstallmentAmount: 3, HavePaid: 0}).Error
-		if err != nil {
-			log.Fatal("Error by update total purchase class(buy class):", err.Error())
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"message": "購買資料更新失敗，請重試",
-			})
-			return
-		}
-	} else if payMethod == 2 {
-		err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: 2, TotalPurchaseClass: totalClass, InstallmentAmount: 6, HavePaid: 0}).Error
-		if err != nil {
-			log.Fatal("Error by update total purchase class(buy class):", err.Error())
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"message": "購買資料更新失敗，請重試",
-			})
-			return
-		}
-	} else if payMethod == 3 {
-		err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: 3, TotalPurchaseClass: totalClass, InstallmentAmount: 12, HavePaid: 0}).Error
-		if err != nil {
-			log.Fatal("Error by update total purchase class(buy class):", err.Error())
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"message": "購買資料更新失敗，請重試",
-			})
-			return
-		}
+	//	Update data by pay method
+	err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: payMethod, TotalPurchaseClass: totalClass, InstallmentAmount: models.Installment[payMethod], HavePaid: 0}).Error
+	if err != nil {
+		log.Fatal("Error by update total purchase class(buy class):", err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "購買資料更新失敗，請重試",
+		})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{

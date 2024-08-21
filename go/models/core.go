@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"gopkg.in/ini.v1"
 	"gorm.io/driver/mysql"
@@ -11,6 +12,8 @@ import (
 )
 
 var DB *gorm.DB
+var Installment map[int]int
+var once sync.Once
 
 func init() {
 	//	Read ini file
@@ -33,4 +36,11 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	once.Do(func() {
+		Installment[0] = 0
+		Installment[1] = 3
+		Installment[2] = 6
+		Installment[3] = 12
+	})
 }
