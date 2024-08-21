@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -93,10 +94,18 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 
 	//	Calculate update data
 	havePaid := student.HavePaid + 1
-	date := student.PayDate.AddDate(0, 1, 0) //	AddDate(year, month, day)
+	payDateTime, err := time.Parse("2006-01-02", student.PayDate)
+	if err != nil {
+		log.Fatal("Error by parse payDate time: ", err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "轉換時間錯誤",
+		})
+		return
+	}
+	date := payDateTime.AddDate(0, 1, 0) //	AddDate(year, month, day)
 
 	//	Use Model to update designated student information
-	err = models.DB.Model(&student).Updates(models.StudentReg{HavePaid: havePaid, PayDate: date}).Error
+	err = models.DB.Model(&student).Updates(models.StudentReg{HavePaid: havePaid, PayDate: date.Format("2006-01-02")}).Error
 	if err != nil {
 		log.Fatal("Error by update installment status: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{

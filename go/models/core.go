@@ -16,6 +16,9 @@ var Installment map[int]int
 var once sync.Once
 
 func init() {
+	//	Init installment
+	Installment = make(map[int]int)
+
 	//	Read ini file
 	config, err := ini.Load("./conf/app.ini")
 	if err != nil {

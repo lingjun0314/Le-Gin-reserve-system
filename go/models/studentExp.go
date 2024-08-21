@@ -3,7 +3,7 @@ package models
 type StudentExp struct {
 	Id                int
 	Name              string
-	Phone             int
+	Phone             string
 	PhysicalCondition string
 	ExpClassPayStatus bool
 	DepositPayStatus  bool

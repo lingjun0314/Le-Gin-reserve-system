@@ -1,14 +1,12 @@
 package models
 
-import "time"
-
 type StudentReg struct {
 	Id                 int
 	Name               string
-	Phone              int
+	Phone              string
 	PhysicalCondition  string
 	PayMethod          int
-	PayDate            time.Time
+	PayDate            string
 	InstallmentAmount  int
 	HavePaid          int
 	TotalPurchaseClass int

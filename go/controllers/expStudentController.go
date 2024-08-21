@@ -203,7 +203,7 @@ func (con ExpStudentController) ChangeToRegularStudent(ctx *gin.Context) {
 		HavePaid:           0,
 		InstallmentAmount:  models.Installment[payMethod],
 		Name:               expStudent.Name,
-		PayDate:            time.Now().AddDate(0, 1, 0),
+		PayDate:            time.Now().AddDate(0, 1, 0).Format("2006-01-02"),
 		PayMethod:          payMethod,
 		Phone:              expStudent.Phone,
 		PhysicalCondition:  expStudent.PhysicalCondition,
