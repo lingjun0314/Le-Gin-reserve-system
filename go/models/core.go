@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sync"
 
@@ -22,7 +21,7 @@ func init() {
 	//	Read ini file
 	config, err := ini.Load("./conf/app.ini")
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
@@ -37,13 +36,18 @@ func init() {
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", user, password, ip, port, database)
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	once.Do(func() {
 		Installment[0] = 0
 		Installment[1] = 3
-		Installment[2] = 6
-		Installment[3] = 12
+		Installment[2] = 4
+		Installment[3] = 5
+		Installment[4] = 6
+		Installment[5] = 7
+		Installment[6] = 8
+		Installment[7] = 9
+		Installment[8] = 10
 	})
 }

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"LeGinReserve/models"
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +24,7 @@ func (con RegStudentController) GetRegularStudents(ctx *gin.Context) {
 func (con RegStudentController) GetRegularStudent(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal("Error by id(get regular student): ", err.Error())
+		fmt.Println("Error by id(get regular student): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id(get regular student): " + err.Error(),
 		})
@@ -38,23 +38,87 @@ func (con RegStudentController) GetRegularStudent(ctx *gin.Context) {
 	})
 }
 
+func (con RegStudentController) CreateRegularStudent(ctx *gin.Context) {
+	//	Get student information from user input
+	name := ctx.PostForm("name")
+	phone := ctx.PostForm("phone")
+	physicalCondition := ctx.PostForm("physicalCondition")
+	payMethod, err := strconv.Atoi(ctx.PostForm("payMethod"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "輸入資料錯誤，請重試",
+		})
+		return
+	}
+	payDate := ctx.PostForm("payDate")
+	var payDateBytes []uint8
+	if payDate != "" {
+		payDateBytes = []uint8(payDate)
+	}
+
+	havePaid, err := strconv.Atoi(ctx.PostForm("havePaid"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "輸入資料錯誤，請重試",
+		})
+		return
+	}
+	totalPurchaseClass, err := strconv.Atoi(ctx.PostForm("totalPurchaseClass"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "輸入資料錯誤，請重試",
+		})
+		return
+	}
+
+	//	Set information
+	student := models.StudentReg{
+		Name:               name,
+		Phone:              phone,
+		PhysicalCondition:  physicalCondition,
+		PayMethod:          payMethod,
+		PayDate:            payDateBytes,
+		InstallmentAmount:  models.Installment[payMethod],
+		HavePaid:           havePaid,
+		TotalPurchaseClass: totalPurchaseClass,
+		AddTime:            time.Now().Unix(),
+	}
+
+	//	Create data
+	err = models.DB.Create(&student).Error
+	if err != nil {
+		fmt.Println("Error by create regular student: ", err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "新增資料失敗，請重試",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "新增成功",
+	})
+}
+
 func (con RegStudentController) DeleteRegularStudent(ctx *gin.Context) {
 	//	Get delete student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal("Error by id(delete regular student): ", err.Error())
+		fmt.Println("Error by id(delete regular student): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
 		return
 	}
 
-	//	Find student from database
-	student := models.StudentReg{Id: id}
-	models.DB.Find(&student)
-
 	//	Delete student
-	models.DB.Delete(&student)
+	err = models.DB.Where("id = ?", id).Delete(&models.StudentReg{}).Error
+	if err != nil {
+		fmt.Println("Error by delete info: ", err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "刪除失敗，請重試",
+		})
+		return
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "刪除成功",
@@ -65,7 +129,7 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	//	Get student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal("Error by id(change installment status): ", err.Error())
+		fmt.Println("Error by id(change installment status): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -94,9 +158,9 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 
 	//	Calculate update data
 	havePaid := student.HavePaid + 1
-	payDateTime, err := time.Parse("2006-01-02", student.PayDate)
+	payDateTime, err := time.Parse("2006-01-02", string(student.PayDate))
 	if err != nil {
-		log.Fatal("Error by parse payDate time: ", err.Error())
+		fmt.Println("Error by parse payDate time: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "轉換時間錯誤",
 		})
@@ -105,13 +169,24 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	date := payDateTime.AddDate(0, 1, 0) //	AddDate(year, month, day)
 
 	//	Use Model to update designated student information
-	err = models.DB.Model(&student).Updates(models.StudentReg{HavePaid: havePaid, PayDate: date.Format("2006-01-02")}).Error
-	if err != nil {
-		log.Fatal("Error by update installment status: ", err.Error())
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"message": "更新失敗，請重試",
-		})
-		return
+	if student.HavePaid+1 == student.InstallmentAmount {
+		err = models.DB.Model(&student).Where("id = ?", id).Select("have_paid", "pay_date").Updates(models.StudentReg{HavePaid: havePaid, PayDate: nil}).Error
+		if err != nil {
+			fmt.Println("Error by update installment status: ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "更新失敗，請重試",
+			})
+			return
+		}
+	} else {
+		err = models.DB.Model(&student).Where("id = ?", id).Updates(models.StudentReg{HavePaid: havePaid, PayDate: []uint8(date.Format("2006-01-02"))}).Error
+		if err != nil {
+			fmt.Println("Error by update installment status: ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "更新失敗，請重試",
+			})
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -123,7 +198,7 @@ func (con RegStudentController) ChangeRegPhysicalCondition(ctx *gin.Context) {
 	//	Get chage physical condition student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal("Error by id(change reg physical condition): ", err.Error())
+		fmt.Println("Error by id(change reg physical condition): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -131,15 +206,14 @@ func (con RegStudentController) ChangeRegPhysicalCondition(ctx *gin.Context) {
 	}
 
 	//	Find student from database
-	student := models.StudentReg{Id: id}
-	models.DB.Find(&student)
+	student := models.StudentReg{}
 
 	physicalCondition := ctx.PostForm("condition")
 
 	//	Update physical condition
-	err = models.DB.Model(&student).Update("physical_condition", physicalCondition).Error
+	err = models.DB.Model(&student).Where("id = ?", id).Update("physical_condition", physicalCondition).Error
 	if err != nil {
-		log.Fatal("Error by update physical condition: ", err.Error())
+		fmt.Println("Error by update physical condition: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "更新失敗，請重試",
 		})
@@ -155,7 +229,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal("Error by id(buy class): ", err.Error())
+		fmt.Println("Error by id(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id: " + err.Error(),
 		})
@@ -177,7 +251,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get purchase class amount
 	classAmount, err := strconv.Atoi(ctx.PostForm("classAmount"))
 	if err != nil {
-		log.Fatal("Error by class amount(buy class): ", err.Error())
+		fmt.Println("Error by class amount(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by class amount: " + err.Error(),
 		})
@@ -187,7 +261,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get pay method
 	payMethod, err := strconv.Atoi(ctx.PostForm("payMethod"))
 	if err != nil {
-		log.Fatal("Error by pay method(buy class): ", err.Error())
+		fmt.Println("Error by pay method(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by pay method: " + err.Error(),
 		})
@@ -198,9 +272,15 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	totalClass := student.TotalPurchaseClass + classAmount
 
 	//	Update data by pay method
-	err = models.DB.Model(&student).Updates(models.StudentReg{PayMethod: payMethod, TotalPurchaseClass: totalClass, InstallmentAmount: models.Installment[payMethod], HavePaid: 0}).Error
+	err = models.DB.Model(&models.StudentReg{}).Where("id = ?", id).Updates(models.StudentReg{
+		PayMethod:          payMethod,
+		TotalPurchaseClass: totalClass,
+		InstallmentAmount:  models.Installment[payMethod],
+		HavePaid:           1,
+		PayDate:            []uint8(time.Now().AddDate(0, 1, 0).Format("2006-01-02")),
+	}).Error
 	if err != nil {
-		log.Fatal("Error by update total purchase class(buy class):", err.Error())
+		fmt.Println("Error by update total purchase class(buy class):", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "購買資料更新失敗，請重試",
 		})

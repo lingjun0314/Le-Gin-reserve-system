@@ -1,16 +1,16 @@
 package models
 
 type StudentReg struct {
-	Id                 int
-	Name               string
-	Phone              string
-	PhysicalCondition  string
-	PayMethod          int
-	PayDate            string
-	InstallmentAmount  int
-	HavePaid          int
-	TotalPurchaseClass int
-	AddTime            int64
+	Id                 int     `gorm:"primaryKey" json:"id"`
+	Name               string  `json:"name"`
+	Phone              string  `json:"phone"`
+	PhysicalCondition  string  `json:"physical_condition"`
+	PayMethod          int     `json:"pay_method"`
+	PayDate            []uint8 `json:"pay_date"`
+	InstallmentAmount  int     `json:"installment_amount"`
+	HavePaid           int     `json:"have_paid"`
+	TotalPurchaseClass int     `json:"total_purchase_class"`
+	AddTime            int64   `json:"add_time"`
 }
 
 func (StudentReg) TableName() string {
