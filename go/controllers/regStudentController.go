@@ -16,8 +16,28 @@ func (con RegStudentController) GetRegularStudents(ctx *gin.Context) {
 	//	Find data order by add_time from new to old
 	studentList := []models.StudentReg{}
 	models.DB.Order("add_time desc").Find(&studentList)
+
+	// Convert payDate to string for each student
+	var response []map[string]interface{}
+	for _, student := range studentList {
+		payDateString := string(student.PayDate)
+		studentData := map[string]interface{}{
+			"id":                   student.Id,
+			"name":                 student.Name,
+			"phone":                student.Phone,
+			"physical_condition":   student.PhysicalCondition,
+			"pay_method":           student.PayMethod,
+			"pay_date":             payDateString,
+			"installment_amount":   student.InstallmentAmount,
+			"have_paid":            student.HavePaid,
+			"total_purchase_class": student.TotalPurchaseClass,
+			"add_time":             student.AddTime,
+		}
+		response = append(response, studentData)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"data": studentList,
+		"data": response,
 	})
 }
 
@@ -33,8 +53,23 @@ func (con RegStudentController) GetRegularStudent(ctx *gin.Context) {
 	student := models.StudentReg{Id: id}
 	models.DB.Find(&student)
 
+	payDateString := string(student.PayDate)
+
+	studentData := map[string]interface{}{
+		"id":                   student.Id,
+		"name":                 student.Name,
+		"phone":                student.Phone,
+		"physical_condition":   student.PhysicalCondition,
+		"pay_method":           student.PayMethod,
+		"pay_date":             payDateString,
+		"installment_amount":   student.InstallmentAmount,
+		"have_paid":            student.HavePaid,
+		"total_purchase_class": student.TotalPurchaseClass,
+		"add_time":             student.AddTime,
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"data": student,
+		"data": studentData,
 	})
 }
 

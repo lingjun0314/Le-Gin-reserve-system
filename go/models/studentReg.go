@@ -16,3 +16,7 @@ type StudentReg struct {
 func (StudentReg) TableName() string {
 	return "student_reg"
 }
+
+func (s StudentReg) GetName() string {
+	return s.Name
+}

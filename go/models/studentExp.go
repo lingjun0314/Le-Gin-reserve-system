@@ -13,3 +13,7 @@ type StudentExp struct {
 func (StudentExp) TableName() string {
 	return "student_exp"
 }
+
+func (s StudentExp) GetName() string {
+	return s.Name
+}

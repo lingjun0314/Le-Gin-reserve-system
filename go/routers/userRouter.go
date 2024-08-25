@@ -21,6 +21,7 @@ func InitUserRouter(r *gin.Engine) {
 
 	//	Experience student routers
 	r.GET("/student/experience", controllers.ExpStudentController{}.GetExperienceStudents)
+	r.POST("/student/experience", controllers.ExpStudentController{}.CreateExperienceStudent)
 	r.GET("/student/experience/:id", controllers.ExpStudentController{}.GetExperienceStudent)
 	r.GET("/student/experience/deposit", controllers.ExpStudentController{}.GetHavePaidDepositExpStudents)
 	r.PUT("/student/experience/physicalCondition/:id", controllers.ExpStudentController{}.ChangeExpPhysicalCondition)
@@ -29,4 +30,6 @@ func InitUserRouter(r *gin.Engine) {
 	r.POST("/student/experience/regular/:id", controllers.ExpStudentController{}.ChangeToRegularStudent)
 	r.DELETE("/student/experience/:id", controllers.ExpStudentController{}.DeleteExperienceStudent)
 
+	//	Reserve routers
+	r.GET("/reserve", controllers.ReserveController{}.GetReserveList)
 }
