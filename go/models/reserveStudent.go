@@ -1,14 +1,10 @@
 package models
 
-type Student interface {
-	GetName()
-}
-
 type ReserveStudent struct {
-	Id          int
-	StudentType int
+	Id          int `json:"id"`
+	StudentType int `json:"student_type"`
 	StudentId   int
-	Student     Student `gorm:"polymorphic:StudentTable"`
+	Student     interface{} `gorm:"polymorphic:StudentTable"`
 }
 
 func (ReserveStudent) TableName() string {

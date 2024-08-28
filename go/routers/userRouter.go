@@ -32,4 +32,8 @@ func InitUserRouter(r *gin.Engine) {
 
 	//	Reserve routers
 	r.GET("/reserve", controllers.ReserveController{}.GetReserveList)
+	r.GET("/reserve/:id", controllers.ReserveController{}.GetReserveDetail)
+	r.DELETE("/reserve/:id", controllers.ReserveController{}.DeleteReserve)
+	r.GET("/reserve/student/:name",controllers.ReserveController{}.GetReserveByName)
+	r.GET("/rserve/free",controllers.ReserveController{}.GetCanReserveTime)
 }
