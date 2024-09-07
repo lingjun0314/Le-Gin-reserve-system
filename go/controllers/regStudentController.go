@@ -106,6 +106,14 @@ func (con RegStudentController) CreateRegularStudent(ctx *gin.Context) {
 		return
 	}
 
+	haveReserveClass, err := strconv.Atoi(ctx.PostForm("haveReserveClass"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "輸入資料錯誤，請重試",
+		})
+		return
+	}
+
 	//	Set information
 	student := models.StudentReg{
 		Name:               name,
@@ -116,6 +124,7 @@ func (con RegStudentController) CreateRegularStudent(ctx *gin.Context) {
 		InstallmentAmount:  models.Installment[payMethod],
 		HavePaid:           havePaid,
 		TotalPurchaseClass: totalPurchaseClass,
+		HaveReserveClass:   haveReserveClass,
 		AddTime:            time.Now().Unix(),
 	}
 

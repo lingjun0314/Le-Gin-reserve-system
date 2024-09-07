@@ -283,6 +283,7 @@ func (con ExpStudentController) ChangeToRegularStudent(ctx *gin.Context) {
 		Phone:              expStudent.Phone,
 		PhysicalCondition:  expStudent.PhysicalCondition,
 		TotalPurchaseClass: classAmount,
+		HaveReserveClass:   0,
 	}
 
 	//	Start a transaction

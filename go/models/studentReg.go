@@ -10,6 +10,7 @@ type StudentReg struct {
 	InstallmentAmount  int     `json:"installment_amount"`
 	HavePaid           int     `json:"have_paid"`
 	TotalPurchaseClass int     `json:"total_purchase_class"`
+	HaveReserveClass   int     `json:"have_reserve_class"`
 	AddTime            int64   `json:"add_time"`
 }
 

@@ -33,7 +33,7 @@ func init() {
 	database := config.Section("mysql").Key("database").String()
 
 	//	Set dsn and open database
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", user, password, ip, port, database)
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", user, password, ip, port, database)
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
