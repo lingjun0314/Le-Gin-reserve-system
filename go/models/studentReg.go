@@ -4,14 +4,14 @@ type StudentReg struct {
 	Id                 int     `gorm:"primaryKey" json:"id"`
 	Name               string  `json:"name"`
 	Phone              string  `json:"phone"`
-	PhysicalCondition  string  `json:"physical_condition"`
-	PayMethod          int     `json:"pay_method"`
-	PayDate            []uint8 `json:"pay_date"`
-	InstallmentAmount  int     `json:"installment_amount"`
-	HavePaid           int     `json:"have_paid"`
-	TotalPurchaseClass int     `json:"total_purchase_class"`
-	HaveReserveClass   int     `json:"have_reserve_class"`
-	AddTime            int64   `json:"add_time"`
+	PhysicalCondition  string  `json:"physicalCondition"`
+	PayMethod          int     `json:"payMethod"`
+	PayDate            []uint8 `json:"payDate"`
+	InstallmentAmount  int     `json:"installmentAmount"`
+	HavePaid           int     `json:"havePaid"`
+	TotalPurchaseClass int     `json:"totalPurchaseClass"`
+	HaveReserveClass   int     `json:"haveReserveClass"`
+	AddTime            int64   `json:"addTime"`
 }
 
 func (StudentReg) TableName() string {

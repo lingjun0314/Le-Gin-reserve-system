@@ -2,9 +2,10 @@ package models
 
 type ReserveStudent struct {
 	Id          int `json:"id"`
-	StudentType int `json:"student_type"`
+	StudentType string `json:"studentType"`
 	StudentId   int
-	//Student     interface{} `gorm:"polymorphic:StudentTable"`
+	StudentExp  StudentExp `gorm:"foreignKey:StudentId;reference:Id"`
+	StudentReg  StudentReg `gorm:"foreignKey:StudentId;reference:Id"`
 }
 
 func (ReserveStudent) TableName() string {

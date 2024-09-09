@@ -76,7 +76,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 
 	tx := models.DB.Begin()
 
-	if err = tx.Model(&models.StudentReg{}).Where("id = ?", student.Id).Update("have_reserve_class", student.HaveReserveClass+1).Error; err != nil {
+	if err = tx.Model(&student).Update("have_reserve_class", student.HaveReserveClass+1).Error; err != nil {
 		tx.Rollback()
 		fmt.Println("Error by update have_reserve_class: ", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -120,7 +120,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 
 	//	Create reserve student record
 	reserveStudent := models.ReserveStudent{
-		StudentType: 2,
+		StudentType: "regular",
 		StudentId:   studentId,
 	}
 	err = tx.Create(&reserveStudent).Error
@@ -138,7 +138,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 		ReserveDate:      date,
 		ReserveTime:      reserveTime,
 		ReserveStudentId: reserveStudent.Id,
-		ClassType:        0,
+		ClassType:        "正課",
 		ClassEndTime:     newClassEndTime.Format("15:04:05"),
 		ClassRecord:      "",
 		AddTime:          time.Now().Unix(),
@@ -189,6 +189,19 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 		return
 	}
 	newClassEndTime := newReserveTime.Add(time.Hour + 30*time.Minute)
+
+	allExpStudent := []models.StudentExp{}
+	models.DB.Find(&allExpStudent)
+
+	//	Check this student has already reserved class or not
+	for _, student := range allExpStudent {
+		if student.Name == studentName {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": "該學生已經預約過體驗課",
+			})
+			return
+		}
+	}
 
 	//	Find this date reserve records
 	reserveList := []models.Reserve{}
@@ -247,7 +260,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 
 	//	Create reserve student record
 	reserveStudent := models.ReserveStudent{
-		StudentType: 1,
+		StudentType: "experience",
 		StudentId:   expStudent.Id,
 	}
 	err = tx.Create(&reserveStudent).Error
@@ -265,7 +278,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 		ReserveDate:      date,
 		ReserveTime:      reserveTime,
 		ReserveStudentId: reserveStudent.Id,
-		ClassType:        1,
+		ClassType:        "體驗課",
 		ClassEndTime:     newClassEndTime.Format("15:04:05"),
 		ClassRecord:      "",
 		AddTime:          time.Now().Unix(),
@@ -307,7 +320,7 @@ func (con ReserveController) GetReserveDetail(ctx *gin.Context) {
 
 	reserve := models.Reserve{Id: id}
 
-	err = models.DB.Preload("ClassItem").Preload("ReserveStudents").First(&reserve).Error
+	err = models.DB.Preload("ReserveStudents.StudentExp").Preload("ReserveStudents.StudentReg").First(&reserve).Error
 	if err != nil {
 		fmt.Println("Failed  to find reserveby error: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -316,13 +329,35 @@ func (con ReserveController) GetReserveDetail(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"reserve_date":  reserve.ReserveDate,
-		"reserve_time":  reserve.ReserveTime,
-		"class_type":    reserve.ClassType,
-		"student_name":  models.GetStudentName(reserve.ReserveStudents),
-		"student_phone": models.GetStudentPhone(reserve.ReserveStudents),
-	})
+	if reserve.ReserveStudents.StudentType == "experience" {
+		ctx.JSON(http.StatusOK, gin.H{
+			"reserveId":    reserve.Id,
+			"reserveDate":  reserve.ReserveDate.Format("2006-01-02"),
+			"reserveTime":  reserve.ReserveTime[:len(reserve.ReserveTime)-3],
+			"classType":    reserve.ClassType,
+			"studentId":    reserve.ReserveStudents.StudentId,
+			"studentName":  reserve.ReserveStudents.StudentExp.Name,
+			"studentPhone": reserve.ReserveStudents.StudentExp.Phone,
+			"classRecord":  reserve.ClassRecord,
+		})
+	} else if reserve.ReserveStudents.StudentType == "regular" {
+		ctx.JSON(http.StatusOK, gin.H{
+			"reserveId":    reserve.Id,
+			"reserveDate":  reserve.ReserveDate.Format("2006-01-02"),
+			"reserveTime":  reserve.ReserveTime[:len(reserve.ReserveTime)-3],
+			"classType":    reserve.ClassType,
+			"studentId":    reserve.ReserveStudents.StudentId,
+			"studentName":  reserve.ReserveStudents.StudentReg.Name,
+			"studentPhone": reserve.ReserveStudents.StudentReg.Phone,
+			"classRecord":  reserve.ClassRecord,
+		})
+	} else {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error student type",
+		})
+		return
+	}
+
 }
 
 func (con ReserveController) GetReserveByName(ctx *gin.Context) {
@@ -352,7 +387,7 @@ func (con ReserveController) GetReserveByName(ctx *gin.Context) {
 		ReserveDate      string
 		ReserveTime      string
 		ReserveStudentId int
-		ClassType        int
+		ClassType        string
 		ClassEndTime     string
 		ClassRecord      string
 	}
@@ -362,7 +397,7 @@ func (con ReserveController) GetReserveByName(ctx *gin.Context) {
 		result := clearResult{
 			Id:               reserve.Id,
 			ReserveDate:      reserve.ReserveDate.Format("2006-01-02"),
-			ReserveTime:      reserve.ReserveTime,
+			ReserveTime:      reserve.ReserveTime[:len(reserve.ReserveTime)-3],
 			ReserveStudentId: reserve.ReserveStudentId,
 			ClassType:        reserve.ClassType,
 			ClassEndTime:     reserve.ClassEndTime,
@@ -397,6 +432,83 @@ func (con ReserveController) DeleteReserve(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "刪除成功",
+	})
+}
+
+func (con ReserveController) UpdateReserveData(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		fmt.Println("Error by get id (DeleteReserve): ", err.Error())
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error by get id (DeleteReserve): " + err.Error(),
+		})
+		return
+	}
+	date, err := time.Parse("2006-01-02", ctx.PostForm("date"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error date format",
+		})
+		return
+	}
+	newReserveTime, err := time.Parse("15:04", ctx.PostForm("time"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error time format",
+		})
+		return
+	}
+	classType := ctx.PostForm("classType")
+
+	var newClassEndTime time.Time
+	if classType == "正課" {
+		newClassEndTime = newReserveTime.Add(time.Hour)
+	} else if classType == "體驗課" {
+		newClassEndTime = newReserveTime.Add(1*time.Hour + 30*time.Minute)
+	}
+
+	//	Find this date reserve records
+	reserveList := []models.Reserve{}
+	models.DB.Where("reserve_date = ?", date.Format("2006-01-02")).Preload("ReserveStudents").Find(&reserveList)
+
+	//	Find time conflict or not
+	for _, reserve := range reserveList {
+		existReserveTime, err := time.Parse("15:04:05", reserve.ReserveTime)
+		if err != nil {
+			fmt.Println("Error parsing existing reserve time: ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Error parsing existing reserve time",
+			})
+			return
+		}
+
+		existClassEndTime, err := time.Parse("15:04:05", reserve.ClassEndTime)
+		if err != nil {
+			fmt.Println("Error parsing existing class end time: ", err.Error())
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Error parsing existing class end time",
+			})
+			return
+		}
+
+		//	Judge time conflict or not
+		if newReserveTime.Before(existClassEndTime) && newClassEndTime.After(existReserveTime) {
+			ctx.JSON(http.StatusConflict, gin.H{
+				"message": "課程時間衝突，請重新選擇課程時間",
+			})
+			return
+		}
+	}
+
+	reserve := models.Reserve{Id: id}
+	models.DB.First(&reserve)
+
+	reserve.ReserveDate = date
+	reserve.ReserveTime = newReserveTime.Format("15:04:05")
+	models.DB.Save(&reserve)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "更新預約時間成功！",
 	})
 }
 
@@ -450,8 +562,23 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	afternoonReserve := make(map[string][]models.Reserve) //	Afternoon reserve records
 	nightReserve := make(map[string][]models.Reserve)     //	Night reserve records
 
+	holidays := []models.Holiday{}
+	models.DB.Where("year = ? AND month = ?", year, month).Find(&holidays)
+
 	//	Find all reserves match in dates
 	for _, date := range dates {
+		//	Except holiday
+		isHoliday := false
+		for _, holiday := range holidays {
+			if date.Day() == holiday.Day {
+				isHoliday = true
+				break
+			}
+		}
+		if isHoliday {
+			continue
+		}
+
 		reserveList := []models.Reserve{}
 		if err := models.DB.Where("reserve_date = ?", date).Order("reserve_time ASC").Find(&reserveList).Error; err != nil {
 			fmt.Println("Error by find reserveList: ", err.Error())
@@ -489,6 +616,9 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	//	Search morning free time
 	case timeRange == 0:
 		for _, date := range dates {
+			if date.Before(time.Now()) {
+				continue
+			}
 			dateStr := date.Format("2006-01-02")
 			//	If this date has no record
 			if len(morningReserve[dateStr]) == 0 {
@@ -499,6 +629,28 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 					if i == 0 {
 						reserveTime, _ := time.Parse("15:04:05", morningReserve[dateStr][i].ReserveTime)
 						reserveDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveTime.Hour(), reserveTime.Minute(), 0, 0, date.Location())
+
+						switch {
+						case classType == 0:
+							//	If the first class start time to 9:00 has over or equal to 1 hour, append one result
+							if reserveDateTime.Sub(time.Date(date.Year(), date.Month(), date.Day(), 9, 0, 0, 0, date.Location())).Hours() >= 1 {
+								//	Reservations can be made one hour before the next class start
+								endTime := reserveDateTime.Add(-1 * time.Hour).Format("15:04")
+								results = append(results, fmt.Sprintf("%d/%d/%d 9:00~%s", date.Year(), date.Month(), date.Day(), endTime))
+							}
+						case classType == 1:
+							//	If the first class start time to 9:00 has over or equal to 1.5 hour, append one result
+							if reserveDateTime.Sub(time.Date(date.Year(), date.Month(), date.Day(), 9, 0, 0, 0, date.Location())).Hours() >= 1.5 {
+								//	Reservations can be made one hour before the next class start
+								endTime := reserveDateTime.Add(-1*time.Hour - 30*time.Minute).Format("15:04")
+								results = append(results, fmt.Sprintf("%d/%d/%d 9:00~%s", date.Year(), date.Month(), date.Day(), endTime))
+							}
+						default:
+							ctx.JSON(http.StatusBadRequest, gin.H{
+								"message": "Error class type",
+							})
+							return
+						}
 
 						//	If only one record
 						if len(morningReserve[dateStr]) == 1 {
@@ -522,29 +674,6 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 								})
 								return
 							}
-							continue
-						}
-
-						switch {
-						case classType == 0:
-							//	If the first class start time to 9:00 has over or equal to 1 hour, append one result
-							if reserveDateTime.Sub(time.Date(date.Year(), date.Month(), date.Day(), 9, 0, 0, 0, date.Location())).Hours() >= 1 {
-								//	Reservations can be made one hour before the next class start
-								endTime := reserveDateTime.Add(-1 * time.Hour).Format("15:04")
-								results = append(results, fmt.Sprintf("%d/%d/%d 9:00~%s", date.Year(), date.Month(), date.Day(), endTime))
-							}
-						case classType == 1:
-							//	If the first class start time to 9:00 has over or equal to 1.5 hour, append one result
-							if reserveDateTime.Sub(time.Date(date.Year(), date.Month(), date.Day(), 9, 0, 0, 0, date.Location())).Hours() >= 1.5 {
-								//	Reservations can be made one hour before the next class start
-								endTime := reserveDateTime.Add(-1*time.Hour - 30*time.Minute).Format("15:04")
-								results = append(results, fmt.Sprintf("%d/%d/%d 9:00~%s", date.Year(), date.Month(), date.Day(), endTime))
-							}
-						default:
-							ctx.JSON(http.StatusBadRequest, gin.H{
-								"message": "Error class type",
-							})
-							return
 						}
 
 					} else if i == len(morningReserve[dateStr])-1 { //	The last record
@@ -637,6 +766,9 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	//	Search afternoon free time
 	case timeRange == 1:
 		for _, date := range dates {
+			if date.Before(time.Now()) {
+				continue
+			}
 			dateStr := date.Format("2006-01-02")
 			//	If this date has no record
 			if len(afternoonReserve[dateStr]) == 0 {
@@ -647,30 +779,6 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 					if i == 0 {
 						reserveTime, _ := time.Parse("15:04:05", afternoonReserve[dateStr][i].ReserveTime)
 						reserveDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveTime.Hour(), reserveTime.Minute(), 0, 0, date.Location())
-
-						//	If only one record
-						if len(afternoonReserve[dateStr]) == 1 {
-							reserveEndTime, _ := time.Parse("15:04:05", afternoonReserve[dateStr][i].ClassEndTime)
-							reserveEndDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveEndTime.Hour(), reserveEndTime.Minute(), 0, 0, date.Location())
-							switch {
-							case classType == 0:
-								//	If the last class end time to 17:00 has over or equal to 1 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 17, 0, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
-								}
-							case classType == 1:
-								//	If the last class end time to 16:30 has over or equal to 1.5 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 16, 30, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~16:30", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
-								}
-							default:
-								ctx.JSON(http.StatusBadRequest, gin.H{
-									"message": "Error class type",
-								})
-								return
-							}
-							continue
-						}
 
 						switch {
 						case classType == 0:
@@ -737,6 +845,29 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 							return
 						}
 
+						//	If only one record
+						if len(afternoonReserve[dateStr]) == 1 {
+							reserveEndTime, _ := time.Parse("15:04:05", afternoonReserve[dateStr][i].ClassEndTime)
+							reserveEndDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveEndTime.Hour(), reserveEndTime.Minute(), 0, 0, date.Location())
+							switch {
+							case classType == 0:
+								//	If the last class end time to 17:00 has over or equal to 1 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 17, 0, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								}
+							case classType == 1:
+								//	If the last class end time to 17:00 has over or equal to 1.5 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 17, 00, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								}
+							default:
+								ctx.JSON(http.StatusBadRequest, gin.H{
+									"message": "Error class type",
+								})
+								return
+							}
+						}
+
 					} else if i == len(afternoonReserve[dateStr])-1 { //	The last record
 						// If only two record
 						if len(afternoonReserve[dateStr]) == 2 {
@@ -757,9 +888,9 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
 								}
 							case classType == 1:
-								//	If the last class end time to 16:30 has over or equal to 1.5 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 16, 30, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~16:30", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								//	If the last class end time to 17:00 has over or equal to 1.5 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 17, 00, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
 								}
 
 								// Calculate time during two record
@@ -785,9 +916,9 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
 								}
 							case classType == 1:
-								//	If the last class end time to 16:30 has over or equal to 1.5 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 16, 30, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~16:30", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								//	If the last class end time to 17:00 has over or equal to 1.5 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 17, 00, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~17:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
 								}
 							default:
 								ctx.JSON(http.StatusBadRequest, gin.H{
@@ -827,6 +958,9 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	//	Search night free time
 	case timeRange == 2:
 		for _, date := range dates {
+			if date.Before(time.Now()) {
+				continue
+			}
 			dateStr := date.Format("2006-01-02")
 			//	If this date has no record
 			if len(nightReserve[dateStr]) == 0 {
@@ -837,30 +971,6 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 					if i == 0 {
 						reserveTime, _ := time.Parse("15:04:05", nightReserve[dateStr][i].ReserveTime)
 						reserveDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveTime.Hour(), reserveTime.Minute(), 0, 0, date.Location())
-
-						//	If only one record
-						if len(nightReserve[dateStr]) == 1 {
-							reserveEndTime, _ := time.Parse("15:04:05", nightReserve[dateStr][i].ClassEndTime)
-							reserveEndDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveEndTime.Hour(), reserveEndTime.Minute(), 0, 0, date.Location())
-							switch {
-							case classType == 0:
-								//	If the last class end time to 21:00 has over or equal to 1 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 21, 0, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~21:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
-								}
-							case classType == 1:
-								//	If the last class end time to 20:30 has over or equal to 1.5 hour, append one result
-								if time.Date(date.Year(), date.Month(), date.Day(), 20, 30, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
-									results = append(results, fmt.Sprintf("%d/%d/%d %s~20:30", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
-								}
-							default:
-								ctx.JSON(http.StatusBadRequest, gin.H{
-									"message": "Error class type",
-								})
-								return
-							}
-							continue
-						}
 
 						switch {
 						case classType == 0:
@@ -925,6 +1035,29 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 								"message": "Error class type",
 							})
 							return
+						}
+
+						//	If only one record
+						if len(nightReserve[dateStr]) == 1 {
+							reserveEndTime, _ := time.Parse("15:04:05", nightReserve[dateStr][i].ClassEndTime)
+							reserveEndDateTime := time.Date(date.Year(), date.Month(), date.Day(), reserveEndTime.Hour(), reserveEndTime.Minute(), 0, 0, date.Location())
+							switch {
+							case classType == 0:
+								//	If the last class end time to 21:00 has over or equal to 1 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 21, 0, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~21:00", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								}
+							case classType == 1:
+								//	If the last class end time to 20:30 has over or equal to 1.5 hour, append one result
+								if time.Date(date.Year(), date.Month(), date.Day(), 20, 30, 0, 0, date.Location()).Sub(reserveEndDateTime).Hours() >= 1.5 {
+									results = append(results, fmt.Sprintf("%d/%d/%d %s~20:30", date.Year(), date.Month(), date.Day(), reserveEndDateTime.Format("15:04")))
+								}
+							default:
+								ctx.JSON(http.StatusBadRequest, gin.H{
+									"message": "Error class type",
+								})
+								return
+							}
 						}
 
 					} else if i == len(nightReserve[dateStr])-1 { //	The last record

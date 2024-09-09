@@ -29,13 +29,14 @@ func InitUserRouter(r *gin.Engine) {
 	r.PATCH("/student/expClassStatus/:id", controllers.ExpStudentController{}.ChangeExpClassPaidStatus)
 	r.PATCH("/student/depositStatus/:id", controllers.ExpStudentController{}.ChangeDepositStatus)
 	r.POST("/student/experience/regular/:id", controllers.ExpStudentController{}.ChangeToRegularStudent)
-	
+
 	//	Reserve routers
 	r.GET("/reserve", controllers.ReserveController{}.GetReserveList)
-	r.POST("/reserve/regular",controllers.ReserveController{}.CreateRegularReserve)
-	r.POST("/reserve/experience",controllers.ReserveController{}.CreateExperienceReserve)
-	// r.GET("/reserve/:id", controllers.ReserveController{}.GetReserveDetail)
+	r.POST("/reserve/regular", controllers.ReserveController{}.CreateRegularReserve)
+	r.POST("/reserve/experience", controllers.ReserveController{}.CreateExperienceReserve)
+	r.GET("/reserve/:id", controllers.ReserveController{}.GetReserveDetail)
+	r.PATCH("/reserve/:id", controllers.ReserveController{}.UpdateReserveData)
 	r.DELETE("/reserve/:id", controllers.ReserveController{}.DeleteReserve)
-	r.GET("/reserve/student/:name",controllers.ReserveController{}.GetReserveByName)
-	r.GET("/reserve/free",controllers.ReserveController{}.GetCanReserveTime)
+	r.GET("/reserve/student/:name", controllers.ReserveController{}.GetReserveByName)
+	r.GET("/reserve/free", controllers.ReserveController{}.GetCanReserveTime)
 }
