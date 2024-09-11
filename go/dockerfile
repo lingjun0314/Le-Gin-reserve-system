@@ -1,0 +1,17 @@
+FROM golang:1.22
+
+WORKDIR /LeGinReserve
+
+COPY . .
+
+RUN apt-get update
+
+RUN apt-get install nano
+
+RUN go mod tidy
+
+RUN go build -o leGinBkd .
+
+CMD ["./leGinBkd"]
+
+# docker build -t kollug1548/le_gin_bkd .
