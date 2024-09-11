@@ -1,7 +1,7 @@
 package models
 
 type ReserveStudent struct {
-	Id          int `json:"id"`
+	Id          int    `json:"id"`
 	StudentType string `json:"studentType"`
 	StudentId   int
 	StudentExp  StudentExp `gorm:"foreignKey:StudentId;reference:Id"`

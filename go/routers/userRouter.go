@@ -32,11 +32,19 @@ func InitUserRouter(r *gin.Engine) {
 
 	//	Reserve routers
 	r.GET("/reserve", controllers.ReserveController{}.GetReserveList)
-	r.POST("/reserve/regular", controllers.ReserveController{}.CreateRegularReserve)
-	r.POST("/reserve/experience", controllers.ReserveController{}.CreateExperienceReserve)
 	r.GET("/reserve/:id", controllers.ReserveController{}.GetReserveDetail)
 	r.PATCH("/reserve/:id", controllers.ReserveController{}.UpdateReserveData)
 	r.DELETE("/reserve/:id", controllers.ReserveController{}.DeleteReserve)
+	r.POST("/reserve/regular", controllers.ReserveController{}.CreateRegularReserve)
+	r.POST("/reserve/experience", controllers.ReserveController{}.CreateExperienceReserve)
 	r.GET("/reserve/student/:name", controllers.ReserveController{}.GetReserveByName)
 	r.GET("/reserve/free", controllers.ReserveController{}.GetCanReserveTime)
+	r.GET("/reserve/free/:date", controllers.ReserveController{}.GetCanReserveTimeByDate)
+
+	//	Class table routers
+	r.GET("/class/:date", controllers.ClassController{}.GetClassByDate)
+	r.PATCH("/class/:id", controllers.ClassController{}.UpdateClassRecord)
+	r.GET("/holiday/:year/:month", controllers.ClassController{}.GetHolidayByMonth)
+	r.POST("/class/holiday", controllers.ClassController{}.SetHoliday)
+	r.DELETE("/class/holiday", controllers.ClassController{}.DeleteHoliday)
 }
