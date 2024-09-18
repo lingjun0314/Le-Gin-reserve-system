@@ -3,6 +3,7 @@ package controllers
 import (
 	"LeGinReserve/models"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -78,7 +79,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 
 	if err = tx.Model(&student).Update("have_reserve_class", student.HaveReserveClass+1).Error; err != nil {
 		tx.Rollback()
-		fmt.Println("Error by update have_reserve_class: ", err)
+		log.Println("Error by update have_reserve_class: ", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "預約失敗，請重試",
 		})
@@ -93,7 +94,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 	for _, reserve := range reserveList {
 		existReserveTime, err := time.Parse("15:04:05", reserve.ReserveTime)
 		if err != nil {
-			fmt.Println("Error parsing existing reserve time: ", err.Error())
+			log.Println("Error parsing existing reserve time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing reserve time",
 			})
@@ -102,7 +103,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 
 		existClassEndTime, err := time.Parse("15:04:05", reserve.ClassEndTime)
 		if err != nil {
-			fmt.Println("Error parsing existing class end time: ", err.Error())
+			log.Println("Error parsing existing class end time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing class end time",
 			})
@@ -126,7 +127,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 	err = tx.Create(&reserveStudent).Error
 	if err != nil {
 		tx.Rollback()
-		fmt.Println("Error by create reserve student: ", err.Error())
+		log.Println("Error by create reserve student: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -147,7 +148,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 	err = tx.Create(&newReserve).Error
 	if err != nil {
 		tx.Rollback()
-		fmt.Println("Error by create reserve: ", err.Error())
+		log.Println("Error by create reserve: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -156,7 +157,7 @@ func (con ReserveController) CreateRegularReserve(ctx *gin.Context) {
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		fmt.Println("Error by commit transaction: ", err.Error())
+		log.Println("Error by commit transaction: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -211,7 +212,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 	for _, reserve := range reserveList {
 		existReserveTime, err := time.Parse("15:04:05", reserve.ReserveTime)
 		if err != nil {
-			fmt.Println("Error parsing existing reserve time: ", err.Error())
+			log.Println("Error parsing existing reserve time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing reserve time",
 			})
@@ -220,7 +221,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 
 		existClassEndTime, err := time.Parse("15:04:05", reserve.ClassEndTime)
 		if err != nil {
-			fmt.Println("Error parsing existing class end time: ", err.Error())
+			log.Println("Error parsing existing class end time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing class end time",
 			})
@@ -251,7 +252,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 	err = tx.Create(&expStudent).Error
 	if err != nil {
 		tx.Rollback()
-		fmt.Println("Error while create experience student in reserve: ", err.Error())
+		log.Println("Error while create experience student in reserve: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -266,7 +267,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 	err = tx.Create(&reserveStudent).Error
 	if err != nil {
 		tx.Rollback()
-		fmt.Println("Error by create reserve student: ", err.Error())
+		log.Println("Error by create reserve student: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -287,7 +288,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 	err = tx.Create(&newReserve).Error
 	if err != nil {
 		tx.Rollback()
-		fmt.Println("Error by create reserve: ", err.Error())
+		log.Println("Error by create reserve: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -296,7 +297,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		fmt.Println("Error by commit transaction: ", err.Error())
+		log.Println("Error by commit transaction: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -311,7 +312,7 @@ func (con ReserveController) CreateExperienceReserve(ctx *gin.Context) {
 func (con ReserveController) GetReserveDetail(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by get id (GetReserve): ", err.Error())
+		log.Println("Error by get id (GetReserve): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by get id (GetReserve): " + err.Error(),
 		})
@@ -322,7 +323,7 @@ func (con ReserveController) GetReserveDetail(ctx *gin.Context) {
 
 	err = models.DB.Preload("ReserveStudents.StudentExp").Preload("ReserveStudents.StudentReg").First(&reserve).Error
 	if err != nil {
-		fmt.Println("Failed  to find reserveby error: ", err.Error())
+		log.Println("Failed  to find reserveby error: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed  to find reserveby error: " + err.Error(),
 		})
@@ -374,7 +375,7 @@ func (con ReserveController) GetReserveByName(ctx *gin.Context) {
 		Find(&reserves).Error
 
 	if err != nil {
-		fmt.Println("Error by GetReserveByName: ", err.Error())
+		log.Println("Error by GetReserveByName: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error by GetReserveByName: " + err.Error(),
 		})
@@ -414,7 +415,7 @@ func (con ReserveController) GetReserveByName(ctx *gin.Context) {
 func (con ReserveController) DeleteReserve(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by get id (DeleteReserve): ", err.Error())
+		log.Println("Error by get id (DeleteReserve): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by get id (DeleteReserve): " + err.Error(),
 		})
@@ -423,7 +424,7 @@ func (con ReserveController) DeleteReserve(ctx *gin.Context) {
 
 	err = models.DB.Where("id = ?", id).Delete(&models.Reserve{}).Error
 	if err != nil {
-		fmt.Println("Error while delete reserve: ", err.Error())
+		log.Println("Error while delete reserve: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Error while delete reserve: " + err.Error(),
 		})
@@ -438,7 +439,7 @@ func (con ReserveController) DeleteReserve(ctx *gin.Context) {
 func (con ReserveController) UpdateReserveData(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by get id (DeleteReserve): ", err.Error())
+		log.Println("Error by get id (DeleteReserve): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by get id (DeleteReserve): " + err.Error(),
 		})
@@ -475,7 +476,7 @@ func (con ReserveController) UpdateReserveData(ctx *gin.Context) {
 	for _, reserve := range reserveList {
 		existReserveTime, err := time.Parse("15:04:05", reserve.ReserveTime)
 		if err != nil {
-			fmt.Println("Error parsing existing reserve time: ", err.Error())
+			log.Println("Error parsing existing reserve time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing reserve time",
 			})
@@ -484,7 +485,7 @@ func (con ReserveController) UpdateReserveData(ctx *gin.Context) {
 
 		existClassEndTime, err := time.Parse("15:04:05", reserve.ClassEndTime)
 		if err != nil {
-			fmt.Println("Error parsing existing class end time: ", err.Error())
+			log.Println("Error parsing existing class end time: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error parsing existing class end time",
 			})
@@ -533,7 +534,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	//	Get all query information
 	year, err := strconv.Atoi(ctx.Query("year"))
 	if err != nil {
-		fmt.Println("Error by year (GetCanReserveTime): ", err.Error())
+		log.Println("Error by year (GetCanReserveTime): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by year (GetCanReserveTime): " + err.Error(),
 		})
@@ -541,7 +542,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	}
 	month, err := strconv.Atoi(ctx.Query("month"))
 	if err != nil {
-		fmt.Println("Error by month (GetCanReserveTime): ", err.Error())
+		log.Println("Error by month (GetCanReserveTime): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by month (GetCanReserveTime): " + err.Error(),
 		})
@@ -549,7 +550,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	}
 	dayType, err := strconv.Atoi(ctx.Query("dayType")) //		type 1: work day	type 2: holiday
 	if err != nil {
-		fmt.Println("Error by dayType (GetCanReserveTime): ", err.Error())
+		log.Println("Error by dayType (GetCanReserveTime): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by dayType (GetCanReserveTime): " + err.Error(),
 		})
@@ -557,7 +558,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	}
 	timeRange, err := strconv.Atoi(ctx.Query("timeRange")) //	range 0: morning	range 1: afternoon	range 2: night
 	if err != nil {
-		fmt.Println("Error by timeRange (GetCanReserveTime): ", err.Error())
+		log.Println("Error by timeRange (GetCanReserveTime): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by timeRange (GetCanReserveTime): " + err.Error(),
 		})
@@ -565,7 +566,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 	}
 	classType, err := strconv.Atoi(ctx.Query("classType")) //	type 0: regular		type 1: experience
 	if err != nil {
-		fmt.Println("Error by classType (GetCanReserveTime): ", err.Error())
+		log.Println("Error by classType (GetCanReserveTime): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by classType (GetCanReserveTime): " + err.Error(),
 		})
@@ -598,7 +599,7 @@ func (con ReserveController) GetCanReserveTime(ctx *gin.Context) {
 
 		reserveList := []models.Reserve{}
 		if err := models.DB.Where("reserve_date = ?", date).Order("reserve_time ASC").Find(&reserveList).Error; err != nil {
-			fmt.Println("Error by find reserveList: ", err.Error())
+			log.Println("Error by find reserveList: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Error by find reserveList: " + err.Error(),
 			})

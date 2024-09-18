@@ -28,7 +28,7 @@ func main() {
 	r := gin.Default()
 
 	//	Set trust proxy ip
-	r.SetTrustedProxies([]string{"127.0.0.1"})
+	r.SetTrustedProxies([]string{"3.25.235.191", "172.31.40.181"})
 	routers.InitUserRouter(r)
 
 	r.Run(":8080")

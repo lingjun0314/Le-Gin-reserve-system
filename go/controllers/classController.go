@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"LeGinReserve/models"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -90,7 +90,7 @@ func (con ClassController) UpdateClassRecord(ctx *gin.Context) {
 	reserve.ClassRecord = text
 	err = models.DB.Save(&reserve).Error
 	if err != nil {
-		fmt.Println("Error by update class record: ", err)
+		log.Println("Error by update class record: ", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "更新失敗，請重試！",
 		})
@@ -129,7 +129,7 @@ func (con ClassController) SetHoliday(ctx *gin.Context) {
 
 	err = models.DB.Save(&holiday).Error
 	if err != nil {
-		fmt.Println("Error by set holiday: ", err)
+		log.Println("Error by set holiday: ", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增失敗，請重試",
 		})
@@ -161,7 +161,7 @@ func (con ClassController) DeleteHoliday(ctx *gin.Context) {
 
 	err = models.DB.Delete(&holiday).Error
 	if err != nil {
-		fmt.Println("Error by delete holiday: ", err)
+		log.Println("Error by delete holiday: ", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "刪除失敗，請重試",
 		})

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"LeGinReserve/models"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,7 +44,7 @@ func (con RegStudentController) GetRegularStudents(ctx *gin.Context) {
 func (con RegStudentController) GetRegularStudent(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by id(get regular student): ", err.Error())
+		log.Println("Error by id(get regular student): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id(get regular student): " + err.Error(),
 		})
@@ -131,7 +131,7 @@ func (con RegStudentController) CreateRegularStudent(ctx *gin.Context) {
 	//	Create data
 	err = models.DB.Create(&student).Error
 	if err != nil {
-		fmt.Println("Error by create regular student: ", err.Error())
+		log.Println("Error by create regular student: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "新增資料失敗，請重試",
 		})
@@ -147,7 +147,7 @@ func (con RegStudentController) DeleteRegularStudent(ctx *gin.Context) {
 	//	Get delete student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by id(delete regular student): ", err.Error())
+		log.Println("Error by id(delete regular student): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -157,7 +157,7 @@ func (con RegStudentController) DeleteRegularStudent(ctx *gin.Context) {
 	//	Delete student
 	err = models.DB.Where("id = ?", id).Delete(&models.StudentReg{}).Error
 	if err != nil {
-		fmt.Println("Error by delete info: ", err.Error())
+		log.Println("Error by delete info: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "刪除失敗，請重試",
 		})
@@ -173,7 +173,7 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	//	Get student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by id(change installment status): ", err.Error())
+		log.Println("Error by id(change installment status): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -204,7 +204,7 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	havePaid := student.HavePaid + 1
 	payDateTime, err := time.Parse("2006-01-02", string(student.PayDate))
 	if err != nil {
-		fmt.Println("Error by parse payDate time: ", err.Error())
+		log.Println("Error by parse payDate time: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "轉換時間錯誤",
 		})
@@ -216,7 +216,7 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	if student.HavePaid+1 == student.InstallmentAmount {
 		err = models.DB.Model(&student).Where("id = ?", id).Select("have_paid", "pay_date").Updates(models.StudentReg{HavePaid: havePaid, PayDate: nil}).Error
 		if err != nil {
-			fmt.Println("Error by update installment status: ", err.Error())
+			log.Println("Error by update installment status: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "更新失敗，請重試",
 			})
@@ -225,7 +225,7 @@ func (con RegStudentController) ChangeInstallmentStatus(ctx *gin.Context) {
 	} else {
 		err = models.DB.Model(&student).Where("id = ?", id).Updates(models.StudentReg{HavePaid: havePaid, PayDate: []uint8(date.Format("2006-01-02"))}).Error
 		if err != nil {
-			fmt.Println("Error by update installment status: ", err.Error())
+			log.Println("Error by update installment status: ", err.Error())
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"message": "更新失敗，請重試",
 			})
@@ -242,7 +242,7 @@ func (con RegStudentController) ChangeRegPhysicalCondition(ctx *gin.Context) {
 	//	Get chage physical condition student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by id(change reg physical condition): ", err.Error())
+		log.Println("Error by id(change reg physical condition): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
 		})
@@ -257,7 +257,7 @@ func (con RegStudentController) ChangeRegPhysicalCondition(ctx *gin.Context) {
 	//	Update physical condition
 	err = models.DB.Model(&student).Where("id = ?", id).Update("physical_condition", physicalCondition).Error
 	if err != nil {
-		fmt.Println("Error by update physical condition: ", err.Error())
+		log.Println("Error by update physical condition: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "更新失敗，請重試",
 		})
@@ -273,7 +273,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get student id
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		fmt.Println("Error by id(buy class): ", err.Error())
+		log.Println("Error by id(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by id: " + err.Error(),
 		})
@@ -295,7 +295,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get purchase class amount
 	classAmount, err := strconv.Atoi(ctx.PostForm("classAmount"))
 	if err != nil {
-		fmt.Println("Error by class amount(buy class): ", err.Error())
+		log.Println("Error by class amount(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by class amount: " + err.Error(),
 		})
@@ -305,7 +305,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 	//	Get pay method
 	payMethod, err := strconv.Atoi(ctx.PostForm("payMethod"))
 	if err != nil {
-		fmt.Println("Error by pay method(buy class): ", err.Error())
+		log.Println("Error by pay method(buy class): ", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Error by pay method: " + err.Error(),
 		})
@@ -324,7 +324,7 @@ func (con RegStudentController) BuyClass(ctx *gin.Context) {
 		PayDate:            []uint8(time.Now().AddDate(0, 1, 0).Format("2006-01-02")),
 	}).Error
 	if err != nil {
-		fmt.Println("Error by update total purchase class(buy class):", err.Error())
+		log.Println("Error by update total purchase class(buy class):", err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "購買資料更新失敗，請重試",
 		})
